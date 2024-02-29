@@ -1,17 +1,25 @@
 let runningTotal = 0;
 let buffer = '0';
-let previousOperator;
+let previousOperator = null;
 
 const screen = document.querySelector('.screen');
 
+const operations = {
+  '+': (x, y) => x + y,
+  '-': (x, y) => x - y,
+  '×': (x, y) => x * y,
+  '÷': (x, y) => x / y,
+};
+
 function buttonClick(value) {
-    if (isNaN(parseInt(value))) {
-        handleSymbol(value);
-    } else {
+    if (!isNaN(parseFloat(value)) || value === '.') {
         handleNumber(value);
+    } else {
+        handleSymbol(value);
     }
     screen.innerText = buffer;
 }
+
 
 function handleSymbol(symbol) {
     switch (symbol) {
@@ -22,10 +30,9 @@ function handleSymbol(symbol) {
             if (previousOperator === null) {
                 return;
             }
-            flushOperation(parseInt(buffer));
+            runningTotal = flushOperation();
             previousOperator = null;
             buffer = runningTotal.toString();
-            runningTotal = 0;
             break;
         case '←':
             if (buffer.length === 1) {
@@ -38,46 +45,32 @@ function handleSymbol(symbol) {
         case '-':
         case '×':
         case '÷':
-            handleMath(symbol);
+            previousOperator = symbol;
             break;
     }
 }
 
-function handleMath(symbol) {
-    if (buffer === '0') {
+function handleMath() {
+    if (buffer === '0' || buffer === 'Error') {
         return;
     }
 
-    const intBuffer = parseInt(buffer);
+    const intBuffer = parseFloat(buffer);
 
     if (runningTotal === 0) {
         runningTotal = intBuffer;
     } else {
-        flushOperation(intBuffer);
+        runningTotal = flushOperation(intBuffer);
     }
-    previousOperator = symbol;
     buffer = '0';
 }
 
 function flushOperation(intBuffer) {
-    switch (previousOperator) {
-        case '+':
-            runningTotal += intBuffer;
-            break;
-        case '-':
-            runningTotal -= intBuffer;
-            break;
-        case '×':
-            runningTotal *= intBuffer;
-            break;
-        case '÷':
-            if (intBuffer === 0) {
-                buffer = 'Error';
-            } else {
-                runningTotal /= intBuffer;
-            }
-            break;
+    if (previousOperator === null) {
+        return runningTotal;
     }
+    runningTotal = operations[previousOperator](runningTotal, intBuffer);
+    return runningTotal;
 }
 
 function handleNumber(numberString) {
